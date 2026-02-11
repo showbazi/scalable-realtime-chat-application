@@ -1,0 +1,12 @@
+{
+  "eslint.workingDirectories": ["./server"],
+  "eslint.useFlatConfig": true, 
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  }
+}
