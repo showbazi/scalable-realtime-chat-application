@@ -13,17 +13,20 @@ model User {
   password  String   // Hashed password
   createdAt DateTime @default(now())
   
-  // Relationships
+  // Relations: Pointing to the join table and messages
   conversations ConversationParticipant[]
   messages      Message[]
 }
 
 model Conversation {
   id        String   @id @default(uuid())
-  // Removed name and isGroup
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // ✅ REQUIRED FIELDS FOR GROUP CHAT
+  name      String?  // Nullable: "Tech Team" has a name, but 1:1 chat is just null
+  isGroup   Boolean  @default(false) // Distinguishes between Direct Messages and Groups
+
   participants ConversationParticipant[]
   messages     Message[]
 }
@@ -37,20 +40,22 @@ model ConversationParticipant {
   user           User         @relation(fields: [userId], references: [id])
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
-  @@unique([userId, conversationId]) // A user can only join a specific conversation once
+  @@unique([userId, conversationId]) // Prevents a user from being added twice to the same chat
   @@index([userId])
 }
 
 model Message {
   id             String       @id @default(uuid())
   content        String
-  senderId       String       // This is the actual field in the DB
-  conversationId String
   createdAt      DateTime     @default(now())
   
-  // FIX: Points 'fields' to 'senderId' which exists above
-  sender         User         @relation(fields: [senderId], references: [id]) 
+  // Sender relation
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  
+  // Conversation relation
+  conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
-  @@index([conversationId, createdAt])
+  @@index([conversationId, createdAt]) // optimises fetching chat history
 }
