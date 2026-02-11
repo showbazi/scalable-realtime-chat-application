@@ -1,81 +1,139 @@
-import { Response, NextFunction } from 'express';
+import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { ChatService } from '../services/chat.service';
-import { MessageService } from '../services/message.service';
-
-interface CreateChatRequest {
-  partnerId: string;
-}
 
 const prisma = new PrismaClient();
 
-export const createOneOnOneChat = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// 1. Start 1:1 Chat (Find existing or Create new)
+export const startChat = async (req: AuthRequest, res: Response) => {
+  const { partnerId } = req.body;
+  const userId = req.user!.userId;
+
   try {
-    const { partnerId } = req.body as CreateChatRequest;
-    const currentUserId = req.user?.userId;
-
-    if (!currentUserId || !partnerId) {
-      return res.status(400).json({ status: 'fail', message: 'Partner ID is required' });
-    }
-
-    // Check if a chat already exists between these two users
-    const existingChat = await prisma.conversation.findFirst({
+    // Check if 1:1 chat already exists
+    // Logic: Find a chat that is NOT a group AND contains BOTH users
+    const existing = await prisma.conversation.findFirst({
       where: {
+        isGroup: false,
         AND: [
-          { participants: { some: { userId: currentUserId } } },
+          { participants: { some: { userId: userId } } },
           { participants: { some: { userId: partnerId } } },
         ],
       },
-    });
-
-    if (existingChat) {
-      return res.status(200).json({ status: 'success', data: existingChat });
-    }
-
-    // Create a simple shared room
-    const conversation = await prisma.conversation.create({
-      data: {
-        participants: {
-          create: [{ userId: currentUserId }, { userId: partnerId }],
-        },
+      include: {
+        participants: { include: { user: true } },
       },
     });
 
-    res.status(201).json({ status: 'success', data: conversation });
-  } catch (error) {
-    next(error);
-  }
-};
+    if (existing) {
+      return res.json({ data: existing });
+    }
 
-export const getMyChats = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ status: 'fail', message: 'Unauthorized' });
-
-    const chats = await ChatService.getUserConversations(userId);
-
-    res.status(200).json({
-      status: 'success',
-      data: chats,
+    // Create new 1:1 Chat
+    const newChat = await prisma.conversation.create({
+      data: {
+        isGroup: false,
+        participants: {
+          create: [{ userId: userId }, { userId: partnerId }],
+        },
+      },
+      include: {
+        participants: { include: { user: true } },
+      },
     });
+
+    res.json({ data: newChat });
   } catch (error) {
-    next(error);
+    console.error('Start chat error:', error);
+    res.status(500).json({ error: 'Failed to start chat' });
   }
 };
 
-export const getChatMessages = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const { conversationId } = req.params; // Get ID from URL
+// 2. Create a Group Chat
+export const createGroup = async (req: AuthRequest, res: Response) => {
+  const { name, memberIds } = req.body;
+  const creatorId = req.user!.userId;
 
-    // Fetch the last 50 messages using our service
-    const messages = await MessageService.getHistory(conversationId as string);
+  // Combine creator + selected members
+  // We use a Set to ensure unique IDs
+  const allUserIds = [...new Set([...memberIds, creatorId])];
+
+  try {
+    const group = await prisma.conversation.create({
+      data: {
+        name,
+        isGroup: true,
+        // Explicitly create entries in the join table
+        participants: {
+          create: allUserIds.map((id) => ({
+            userId: id as string,
+          })),
+        },
+      },
+      include: {
+        participants: {
+          include: { user: true },
+        },
+      },
+    });
+    res.json({ data: group });
+  } catch (error) {
+    console.error('Create group error:', error);
+    res.status(500).json({ error: 'Failed to create group' });
+  }
+};
+
+// 3. Fetch All Chats (1:1 + Groups)
+export const getConversations = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+
+  try {
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: { userId: userId }, // Check the join table for my ID
+        },
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: { id: true, username: true }, // Only need names for UI
+            },
+          },
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1, // Optional: for "Last message" preview
+        },
+      },
+    });
+    res.json({ data: conversations });
+  } catch (error) {
+    console.error('Get conversations error:', error);
+    res.status(500).json({ error: 'Failed to fetch chats' });
+  }
+};
+
+// 4. Get Messages for a specific Chat
+export const getMessages = async (req: AuthRequest, res: Response) => {
+  try {
+    const { chatId } = req.params;
+
+    const messages = await prisma.message.findMany({
+      where: {
+        conversationId: chatId as string, // <--- FIX: Add 'as string' here
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    });
 
     res.status(200).json({
       status: 'success',
       data: messages,
     });
   } catch (error) {
-    next(error);
+    console.error('Get messages error:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
   }
 };

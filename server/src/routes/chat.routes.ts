@@ -1,11 +1,19 @@
 import { Router } from 'express';
+import {
+  startChat,
+  createGroup,
+  getConversations,
+  getMessages,
+} from '../controllers/chat.controller';
 import { authenticate } from '../middleware/auth.middleware';
-import { createOneOnOneChat, getChatMessages, getMyChats } from '../controllers/chat.controller';
 
 const router = Router();
 
-router.post('/', authenticate, createOneOnOneChat);
-router.get('/', authenticate, getMyChats);
-router.get('/:conversationId/messages', authenticate, getChatMessages);
+router.use(authenticate);
+
+router.post('/', startChat); // Start 1:1
+router.post('/group', createGroup); // Start Group
+router.get('/', getConversations); // List all
+router.get('/:chatId/messages', getMessages); // Get history
 
 export default router;
