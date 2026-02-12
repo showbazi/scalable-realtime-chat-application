@@ -3,7 +3,12 @@ import { Server as HttpServer } from 'http';
 import { MessageService } from './services/message.service';
 import jwt from 'jsonwebtoken';
 
-// Map to store: userId -> socketId
+/**
+ * This module initializes the Socket.IO server and manages real-time communication.
+ * It handles user connections, disconnections, and message broadcasting.
+ * The onlineUsers map tracks currently connected users and their socket IDs:  userId -> socketId.
+ * We can later replace this with REDIS HASH for scalability across multiple server instances.
+ */
 const onlineUsers = new Map<string, string>();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
