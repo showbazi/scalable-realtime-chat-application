@@ -4,7 +4,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 
-// 1. Protected: If NOT logged in, go to Login
+// Protected: If NOT logged in, go to Login
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token, isLoading } = useAuth();
   if (isLoading)
@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return token ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-// 2. Public: If ALREADY logged in, go to Dashboard
+// Public: If ALREADY logged in, go to Dashboard
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { token, isLoading } = useAuth();
   if (isLoading)
