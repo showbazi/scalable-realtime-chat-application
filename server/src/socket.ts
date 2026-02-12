@@ -22,7 +22,7 @@ const decodeToken = (token: string) => {
 export const initSocket = (server: HttpServer) => {
   const io = new Server(server, {
     cors: {
-      origin: 'http://localhost:5173',
+      origin: '*', // FOR DEMO AND DEVELOPMENT ONLY - RESTRICT IN PRODUCTION
       methods: ['GET', 'POST'],
       credentials: true,
     },

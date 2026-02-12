@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
 const api = axios.create({
-  baseURL: 'http://localhost:4000/api', // Matches your backend URL
+  baseURL: `${BASE_URL}/api`,
+  withCredentials: false, // We handle tokens manually, so we don't need cookies
 });
 
 // Interceptor: Automatically add Token to headers
