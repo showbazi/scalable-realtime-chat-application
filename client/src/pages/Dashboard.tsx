@@ -147,7 +147,7 @@ export default function Dashboard() {
     <div className="flex h-screen bg-white overflow-hidden">
       {/* Sidebar Section */}
       <div className="w-80 border-r border-gray-200 flex flex-col h-full bg-white">
-        {/* NEW Sidebar Header Layout */}
+        {/* Sidebar Header Layout */}
         <div className="p-4 border-b h-[65px] flex items-center justify-between bg-gray-50 shadow-sm z-10">
           {/* Left: User Info */}
           <div className="flex items-center space-x-3 overflow-hidden">
