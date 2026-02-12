@@ -38,7 +38,7 @@ A full-stack real-time chat application built to demonstrate **scalable architec
 ### 1. Clone the Repo
 
 ```bash
-git clone [https://github.com/showbazi/scalable-realtime-chat-application](https://github.com/showbazi/scalable-realtime-chat-application)
+git clone [https://github.com/showbazi/scalable-realtime-chat-application.git](https://github.com/showbazi/scalable-realtime-chat-application.git)
 cd scalable-realtime-chat-application
 ```
 
